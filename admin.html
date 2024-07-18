@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h2 {
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+            margin-right: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #logoutBtn {
+            float: right;
+            margin-top: -40px;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        input[type="date"] {
+            padding: 5px;
+            margin-right: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Admin Dashboard</h2>
+        <button id="logoutBtn" onclick="logout()">Logout</button>
+        <table id="ordersTable">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Name</th>
+                    <th>Gender</th>
+                    <th>Age</th>
+                    <th>Product</th>
+                    <th>Status</th>
+                    <th>Timestamp</th>
+                    <th>Pickup Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Orders will be inserted here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        // Check if admin is logged in
+        if (localStorage.getItem('adminLoggedIn') !== 'true') {
+            alert('You must be logged in as an admin to view this page.');
+            window.location.href = 'admin-login.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('adminLoggedIn');
+            window.location.href = 'index.html';
+        }
+
+        function displayOrders() {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            const tableBody = document.querySelector('#ordersTable tbody');
+            
+            tableBody.innerHTML = '';
+
+            orders.forEach((order, index) => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).textContent = order.username;
+                row.insertCell(1).textContent = order.name;
+                row.insertCell(2).textContent = order.gender;
+                row.insertCell(3).textContent = order.age;
+                row.insertCell(4).textContent = order.product;
+                row.insertCell(5).textContent = order.status;
+                row.insertCell(6).textContent = new Date(order.timestamp).toLocaleString();
+                
+                const pickupDateCell = row.insertCell(7);
+                const pickupDateInput = document.createElement('input');
+                pickupDateInput.type = 'date';
+                pickupDateInput.value = order.pickupDate || '';
+                pickupDateInput.onchange = (e) => updatePickupDate(index, e.target.value);
+                pickupDateCell.appendChild(pickupDateInput);
+                
+                const actionCell = row.insertCell(8);
+                const toggleButton = document.createElement('button');
+                toggleButton.textContent = order.status === 'Pending' ? 'Mark Completed' : 'Mark Pending';
+                toggleButton.onclick = () => toggleStatus(index);
+                actionCell.appendChild(toggleButton);
+
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.className = 'delete-btn';
+                deleteButton.onclick = () => deleteOrder(index);
+                actionCell.appendChild(deleteButton);
+            });
+        }
+
+        function updatePickupDate(index, date) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders[index].pickupDate = date;
+            localStorage.setItem('orders', JSON.stringify(orders));
+        }
+
+        function toggleStatus(index) {
+            const orders = JSON.parse(localStorage.getItem('orders')) || [];
+            orders[index].status = orders[index].status === 'Pending' ? 'Completed' : 'Pending';
+            localStorage.setItem('orders', JSON.stringify(orders));
+            displayOrders();
+        }
+
+        function deleteOrder(index) {
+            if (confirm('Are you sure you want to delete this order?')) {
+                let orders = JSON.parse(localStorage.getItem('orders')) || [];
+                orders.splice(index, 1);
+                localStorage.setItem('orders', JSON.stringify(orders));
+                displayOrders();
+            }
+        }
+
+        displayOrders();
+
+        // Refresh orders every 5 seconds
+        setInterval(displayOrders, 5000);
+    </script>
+</body>
+</html>
